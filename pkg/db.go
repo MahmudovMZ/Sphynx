@@ -7,6 +7,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+// Подключение к БД
 var DB *sql.DB
 
 func DataBase() {

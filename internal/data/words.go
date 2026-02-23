@@ -5,6 +5,7 @@ import (
 	db "wordGame/pkg"
 )
 
+// Структура для подсказок и ответов номера загадки и категории слов с номером
 type Word struct {
 	Wordindex int
 	Hint      string
@@ -13,6 +14,7 @@ type Word struct {
 	CatId     int
 }
 
+// Получаем данные из БД сохраняем в слайс на основе структуры
 func GetWords(catId int) []Word {
 	db.DataBase()
 	defer db.DB.Close()

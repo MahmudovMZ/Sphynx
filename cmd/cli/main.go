@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	//Запуск всей программы
 	ui.PrintMsg()
 	category := ui.ScanCat()
 	ui.CategoryConfirm(category)

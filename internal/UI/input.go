@@ -2,6 +2,7 @@ package ui
 
 import "fmt"
 
+// Выбор категории слов при старте игры
 func ScanCat() int {
 	var choice int
 	for {

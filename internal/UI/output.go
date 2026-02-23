@@ -2,6 +2,7 @@ package ui
 
 import "fmt"
 
+// Вывод приветсвенного сообщения
 func PrintMsg() {
 	fmt.Println("Welcome to the game")
 	fmt.Printf("Guess the hidden word by the given hint\n")
