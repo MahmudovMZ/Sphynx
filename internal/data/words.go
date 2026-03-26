@@ -5,7 +5,10 @@ import (
 	db "wordGame/pkg"
 )
 
+var Words []Word
+
 // Структура для подсказок и ответов номера загадки и категории слов с номером
+
 type Word struct {
 	Wordindex int
 	Hint      string
@@ -18,7 +21,7 @@ type Word struct {
 func GetWords(catId int) []Word {
 	db.DataBase()
 	defer db.DB.Close()
-	var words []Word
+
 	//READ
 	rows, err := db.DB.Query("SELECT * FROM wordsToGuess WHERE catid = $1", catId)
 	if err != nil {
@@ -30,11 +33,11 @@ func GetWords(catId int) []Word {
 		if err := rows.Scan(&w.Wordindex, &w.Hint, &w.Answer, &w.Categroy, &w.CatId); err != nil {
 			log.Fatal(err)
 		}
-		words = append(words, w)
+		Words = append(Words, w)
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-	return words
+	return Words
 
 }

@@ -1,14 +1,16 @@
 package ui
 
-import "fmt"
+import (
+	"fmt"
+	"wordGame/internal/data"
+)
 
 // Вывод приветсвенного сообщения
 func PrintMsg() {
 	fmt.Println("Welcome to the game")
 	fmt.Printf("Guess the hidden word by the given hint\n")
-	fmt.Printf(">>>>>Rules<<<<<\n")
+	fmt.Printf("\n       >>>>>Rules<<<<<\n\n")
 	fmt.Printf("1. You have 5 attempts.\n2. Find all words to win.\n3. Have fun and be smart.\n\n")
-	fmt.Println("Choose the categroy of words using numbers")
 	fmt.Println("1. Capitals")
 	fmt.Println("2. Vehicles")
 	fmt.Println("3. Movies")
@@ -27,4 +29,9 @@ func CategoryConfirm(category int) {
 	}
 	fmt.Printf("Great! You have choosen words from %v category\n\n", categories[category])
 
+}
+
+func CountNumOFWords(w []data.Word) {
+	fmt.Println("Great choice!\nThe number of words to guess:")
+	fmt.Println(len(w))
 }

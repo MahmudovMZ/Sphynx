@@ -63,8 +63,8 @@ func (g *Game) Run() {
 
 	for !g.IsGameOver() {
 		hint := g.GetCurrentHint()
-		fmt.Println("Hint: ", hint)
-		fmt.Println("Enter your answer")
+		fmt.Println("\nHint: ", hint)
+		fmt.Println("Enter your answer\n")
 
 		userAnswer, _ := reader.ReadString('\n')
 		userAnswer = strings.TrimSpace(userAnswer)
@@ -73,7 +73,10 @@ func (g *Game) Run() {
 			fmt.Printf("Correct! Score: %v, Lives: %v\n\n", g.Score, g.Lives)
 			g.CurrentIndex++
 		} else {
-			fmt.Printf("Wrong! Remaining attempts: %v\n\n", g.Lives)
+			fmt.Printf("\nWrong! Remaining attempts: %v\n", g.Lives)
+			g.CurrentIndex++
+			fmt.Printf("The correct answer was: %s\n\n", g.Words[g.CurrentIndex].Answer)
+
 		}
 	}
 
