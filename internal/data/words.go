@@ -5,8 +5,6 @@ import (
 	db "wordGame/pkg"
 )
 
-var Words []Word
-
 // Структура для подсказок и ответов номера загадки и категории слов с номером
 
 type Word struct {
@@ -17,27 +15,60 @@ type Word struct {
 	CatId     int
 }
 
-// Получаем данные из БД сохраняем в слайс на основе структуры
-func GetWords(catId int) []Word {
-	db.DataBase()
-	defer db.DB.Close()
+type Categroy struct {
+	ID   int    `json:"category_id"`
+	Name string `json:"category_name"`
+}
 
-	//READ
-	rows, err := db.DB.Query("SELECT * FROM wordsToGuess WHERE catid = $1", catId)
+func GetWords(catId int) []Word {
+	database := db.GetDB()
+	if database == nil {
+		log.Fatal("DB is not initialized")
+	}
+
+	rows, err := database.Query(
+		"SELECT index, hint, answer, category, catid FROM wordsToGuess WHERE catid = $1",
+		catId,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
+
+	var words []Word
+
 	for rows.Next() {
 		var w Word
 		if err := rows.Scan(&w.Wordindex, &w.Hint, &w.Answer, &w.Categroy, &w.CatId); err != nil {
 			log.Fatal(err)
 		}
-		Words = append(Words, w)
+		words = append(words, w)
 	}
-	if err := rows.Err(); err != nil {
+
+	return words
+}
+
+func GetCategories() []Categroy {
+	database := db.GetDB()
+	if database == nil {
+		log.Fatal("DB is not initialized")
+	}
+
+	rows, err := database.Query("SELECT id, name FROM categories ORDER BY id")
+	if err != nil {
 		log.Fatal(err)
 	}
-	return Words
+	defer rows.Close()
 
+	var categories []Categroy
+
+	for rows.Next() {
+		var c Categroy
+		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+			log.Fatal(err)
+		}
+		categories = append(categories, c)
+	}
+
+	return categories
 }
