@@ -37,7 +37,7 @@ func GetWords(catId int) []models.Word {
 	return words
 }
 
-func GetCategories() []models.Categroy {
+func GetCategories() []models.Category {
 	database := db.GetDB()
 	if database == nil {
 		log.Fatal("DB is not initialized")
@@ -49,10 +49,10 @@ func GetCategories() []models.Categroy {
 	}
 	defer rows.Close()
 
-	var categories []models.Categroy
+	var categories []models.Category
 
 	for rows.Next() {
-		var c models.Categroy
+		var c models.Category
 		if err := rows.Scan(&c.ID, &c.Name); err != nil {
 			log.Fatal(err)
 		}

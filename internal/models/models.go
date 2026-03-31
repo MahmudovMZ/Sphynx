@@ -8,7 +8,7 @@ type Word struct {
 	CatId     int
 }
 
-type Categroy struct {
+type Category struct {
 	ID   int    `json:"category_id"`
 	Name string `json:"category_name"`
 }
