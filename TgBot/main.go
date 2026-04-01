@@ -43,6 +43,6 @@ func main() {
 	switch startMode {
 	case "polling":
 		polling.StartPolling(bot)
-
+		log.Fatal(err)
 	}
 }

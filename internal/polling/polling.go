@@ -21,6 +21,7 @@ func StartPolling(bot *tgbotapi.BotAPI) {
 	//updates - канал, поэтому если пришёл новый апдейт, сюда приходит сигнал
 	//И в канал сохраняется структура апдейта
 	for update := range updates {
-		tghandlers.Handler(bot, update)
+		tghandlers.BotHandler(bot, update)
 	}
+
 }
