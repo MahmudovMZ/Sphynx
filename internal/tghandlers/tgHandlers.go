@@ -27,6 +27,16 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	text := update.Message.Text
 
+	if text == "/quit" { //Quit the ssession and delete all data
+		botState[chatID] = ""
+		userState[chatID] = ""
+		delete(userData, chatID)
+		delete(gameData, chatID)
+
+		send(chatID, "Your current session has been ended. Send /start to begin again.")
+		return
+	}
+
 	//Current bot state
 	stage := botState[chatID]
 
@@ -51,7 +61,7 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 
 			botState[chatID] = models.STATE_STARTING_REGISTRATION
 			userState[chatID] = models.STATE_WAITING_NAME
-		case "Login", "/login":
+		case "Login":
 			userData[chatID] = make(map[string]string)
 			send(chatID, "Welcome back, traveler... to regain your path, the gate must recognize you.")
 			send(chatID, "Speak your name:")
@@ -60,9 +70,14 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		case "Leader Board":
 			send(chatID, "leader board")
 
-		case "Exit":
-			send(chatID, "exit")
+		case "Quit":
+			botState[chatID] = ""
+			userState[chatID] = ""
+			delete(userData, chatID)
+			delete(gameData, chatID)
 
+			send(chatID, "Your current session has been ended. Send /start to begin again.")
+			return
 		}
 
 	//Starting registration scenario
@@ -89,6 +104,7 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 
 	case models.STATE_STARTING_LOGIN:
+
 		userStage := userState[chatID]
 		switch userStage {
 		case models.STATE_WAITING_LOGIN_NAME:
@@ -141,14 +157,14 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 
 		if !found {
-			send(chatID, "Please choose a category using the buttons.")
+			send(chatID, "The path is unclear… choose your quest from the options before you.")
 			return
 		}
 
 		//Creating a game
 		game := Game.NewGame(catID)
 		gameData[chatID] = game
-		send(chatID, fmt.Sprintf("Great choice! Number of words: %d", len(game.Words)))
+		send(chatID, fmt.Sprintf("A wise choice! This path holds %d secrets to uncover.", len(game.Words)))
 		//First hint
 		send(chatID, game.GetCurrentHint())
 		botState[chatID] = models.STATE_WAITING_GAME
@@ -156,16 +172,18 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 	case models.STATE_WAITING_GAME:
 		//Game is going on till userState == STATE_WAITING_GAME
 		game := gameData[chatID]
+		words := game.Words[game.CurrentIndex]
 		correct := game.CheckAnswer(text)
 		if correct {
 			send(chatID, "Correct")
 			game.CurrentIndex++
 
 		} else {
-			send(chatID, fmt.Sprintf("Wrong answer! Remaining attempts : %d", game.Lives))
+			send(chatID, fmt.Sprintf("Incorrect! You have %d attempts left to succeed.", game.Lives))
+			send(chatID, fmt.Sprintf("Correct answer was: %s", words.Answer))
 		}
 		if game.IsGameOver() {
-			send(chatID, fmt.Sprintf("Game over! Score: %d. Attempts: %d", game.Score, game.Lives))
+			send(chatID, fmt.Sprintf("Your adventure ends here! Final score: %d. Attempts: %d.", game.Score, game.Lives))
 			delete(gameData, chatID)
 			botState[chatID] = ""
 
@@ -237,7 +255,7 @@ func sendCategoryKeyboard(chatID int64) {
 	}
 
 	keyboard := tgbotapi.NewReplyKeyboard(rows...)
-	msg := tgbotapi.NewMessage(chatID, "Choose a category:")
+	msg := tgbotapi.NewMessage(chatID, "Choose the path you will embark upon:")
 	msg.ReplyMarkup = keyboard
 
 	if _, err := bot.Send(msg); err != nil {
@@ -258,7 +276,7 @@ func SignUp(userN, userP string) {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("\nAccount with username %s has been created\n\n", userN)
+	fmt.Printf("\nThe gate recognizes %s — account successfully forged.\n\n", userN)
 }
 
 func Login(userN, userP string) ([]models.User, error) {
