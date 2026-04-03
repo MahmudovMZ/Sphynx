@@ -8,7 +8,8 @@ import (
 	"strings"
 	ui "wordGame/internal/UI"
 	"wordGame/internal/config"
-	"wordGame/internal/data"
+	"wordGame/internal/models"
+	data "wordGame/internal/repository"
 	db "wordGame/pkg"
 )
 
@@ -16,7 +17,7 @@ import (
 type Game struct {
 	Score        int
 	Lives        int
-	Words        []data.Word
+	Words        []models.Word
 	CurrentIndex int
 }
 
@@ -98,8 +99,6 @@ func Start() {
 	if err != nil {
 		log.Fatal("Coulds not read the config files", err)
 	}
-
-	log.Println(*config.GetConf())
 
 	dbData := config.GetConf().Database
 	err = db.ConnectDB(dbData.Username, dbData.Password, dbData.DBName, dbData.Address)

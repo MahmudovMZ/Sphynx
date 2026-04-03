@@ -2,26 +2,15 @@ package data
 
 import (
 	"log"
+	"wordGame/internal/models"
 	db "wordGame/pkg"
 )
 
-// Структура для подсказок и ответов номера загадки и категории слов с номером
-
-type Word struct {
-	Wordindex int
-	Hint      string
-	Answer    string
-	Categroy  string
-	CatId     int
-}
-
-type Categroy struct {
-	ID   int    `json:"category_id"`
-	Name string `json:"category_name"`
-}
-
-func GetWords(catId int) []Word {
+func GetWords(catId int) []models.Word {
 	database := db.GetDB()
+	if database == nil {
+		log.Fatal("DB is not initialized")
+	}
 	if database == nil {
 		log.Fatal("DB is not initialized")
 	}
@@ -35,10 +24,10 @@ func GetWords(catId int) []Word {
 	}
 	defer rows.Close()
 
-	var words []Word
+	var words []models.Word
 
 	for rows.Next() {
-		var w Word
+		var w models.Word
 		if err := rows.Scan(&w.Wordindex, &w.Hint, &w.Answer, &w.Categroy, &w.CatId); err != nil {
 			log.Fatal(err)
 		}
@@ -48,7 +37,7 @@ func GetWords(catId int) []Word {
 	return words
 }
 
-func GetCategories() []Categroy {
+func GetCategories() []models.Category {
 	database := db.GetDB()
 	if database == nil {
 		log.Fatal("DB is not initialized")
@@ -60,10 +49,10 @@ func GetCategories() []Categroy {
 	}
 	defer rows.Close()
 
-	var categories []Categroy
+	var categories []models.Category
 
 	for rows.Next() {
-		var c Categroy
+		var c models.Category
 		if err := rows.Scan(&c.ID, &c.Name); err != nil {
 			log.Fatal(err)
 		}

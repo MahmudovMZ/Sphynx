@@ -2,12 +2,13 @@ package ui
 
 import (
 	"fmt"
-	"wordGame/internal/data"
+	"wordGame/internal/models"
+	data "wordGame/internal/repository"
 )
 
 // Вывод приветсвенного сообщения
 func PrintMsg() {
-	fmt.Println("Welcome to the game")
+	fmt.Println("Welcome to the the tomb of the haraoh")
 	fmt.Printf("Guess the hidden word by the given hint\n")
 	fmt.Printf("\n       >>>>>Rules<<<<<\n\n")
 	fmt.Printf("1. You have 5 attempts.\n2. Find all words to win.\n3. Have fun and be smart.\n\n")
@@ -19,7 +20,7 @@ func PrintMsg() {
 	}
 }
 
-func CountNumOFWords(w []data.Word) {
+func CountNumOFWords(w []models.Word) {
 	fmt.Println("Great choice!\nThe number of words to guess:")
 	fmt.Println(len(w))
 }
