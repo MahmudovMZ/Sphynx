@@ -3,6 +3,7 @@ package tghandlers
 import (
 	"fmt"
 	"log"
+	"strconv"
 	Game "wordGame/internal/game"
 	"wordGame/internal/models"
 	data "wordGame/internal/repository"
@@ -141,7 +142,6 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 			userP := userData[chatID]["pass"]
 
 			matchedUsers, err := Login(userN, userP)
-			log.Println(matchedUsers)
 			if err != nil {
 				send(chatID, "An error occurred while verifying your credentials. Please try again later.")
 				return
@@ -153,6 +153,9 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 				botState[chatID] = models.STATE_STARTING_LOGIN
 			} else {
 				user := matchedUsers[0]
+				userData[chatID]["id"] = fmt.Sprintf("%d", user.ID)
+				userData[chatID]["username"] = user.Username
+
 				send(chatID, fmt.Sprintf("The gate opens. You have returned successfully, %s!", user.Username))
 				botState[chatID] = models.STATE_USER_LOGED_IN
 				sendGameKeyBoard(chatID)
@@ -160,19 +163,64 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 	//choice of action game menu
 	case models.STATE_USER_LOGED_IN:
-		// //Changing to the next state
-		// userState[chatID] = models.STATE_WAITING_CHOICE
 		choice := text
 
 		switch choice {
+		//starting a new game
 		case "New Game":
 			send(chatID, "New Game")
 			botState[chatID] = models.STATE_WAITING_CATEGORY
 			sendCategoryKeyboard(chatID)
 			fmt.Println(choice)
+		//leaderboard
 		case "Leader Board":
-			send(chatID, "leader Board")
+			send(chatID, "The scroll of champions is divided by realms.")
+			send(chatID, "Choose a category to uncover its greatest minds.")
+			sendLeaderboardKeyboard(chatID)
+			botState[chatID] = models.STATE_WAITING_LEADER_BOARD
 		}
+
+	case models.STATE_WAITING_LEADER_BOARD:
+
+		categories := data.GetCategories()
+		var catID int
+		found := false
+
+		for _, cat := range categories {
+			if text == cat.Name {
+				catID = cat.ID
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			send(chatID, "Choose a valid category.")
+			return
+		}
+
+		leaders, err := data.ShowLeaderBoardByCategory(catID)
+		log.Println(leaders)
+		if err != nil {
+			send(chatID, "Failed to load leaderboard.")
+			return
+		}
+
+		if len(leaders) == 0 {
+			send(chatID, "No champions yet in this realm.")
+			return
+		}
+
+		// вывод
+		msg := "🏆 Leaderboard:\n\n"
+		for i, l := range leaders {
+			msg += fmt.Sprintf("%d. %s — %d pts\n", i+1, l.UserName, l.Score)
+		}
+
+		send(chatID, msg)
+
+		botState[chatID] = models.STATE_USER_LOGED_IN
+		sendGameKeyBoard(chatID)
 
 	//User choosing a category
 	case models.STATE_WAITING_CATEGORY:
@@ -216,8 +264,28 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 		if game.IsGameOver() {
 			send(chatID, fmt.Sprintf("Your adventure ends here! Final score: %d. Attempts: %d.", game.Score, game.Lives))
+
+			userIDStr := userData[chatID]["id"]
+			userID, err := strconv.Atoi(userIDStr)
+			if err != nil {
+				log.Println("invalid user id:", err)
+				return
+			}
+
+			err = data.LeaderBoardFill(userID, game.CategoryID, game.Score)
+			if err != nil {
+				log.Println("failed to save leaderboard:", err)
+			}
+
+			log.Println("Saving result:", userID, game.CategoryID, game.Score)
+			if err != nil {
+				log.Println("DB ERROR:", err)
+			} else {
+				log.Println("Saved successfully")
+			}
 			botState[chatID] = models.STATE_USER_LOGED_IN
 			attemts := game.Lives
+
 			switch attemts {
 			case 0:
 				send(chatID, "The challenge has bested you... for now.")
@@ -305,6 +373,35 @@ func sendGameKeyBoard(chatID int64) {
 }
 
 func sendCategoryKeyboard(chatID int64) {
+	categories := data.GetCategories()
+
+	//local variables in the func to prevent multiplying buttons
+	rows := make([][]tgbotapi.KeyboardButton, 0)
+	row := make([]tgbotapi.KeyboardButton, 0)
+
+	for i, cat := range categories {
+		row = append(row, tgbotapi.NewKeyboardButton(cat.Name))
+		if (i+1)%2 == 0 {
+			//adding row copy into the rows
+			rows = append(rows, append([]tgbotapi.KeyboardButton{}, row...))
+			row = []tgbotapi.KeyboardButton{}
+		}
+	}
+
+	if len(row) > 0 {
+		rows = append(rows, append([]tgbotapi.KeyboardButton{}, row...))
+	}
+
+	keyboard := tgbotapi.NewReplyKeyboard(rows...)
+	msg := tgbotapi.NewMessage(chatID, "Choose the path you will embark upon:")
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Println("Could not send category keyboard:", err)
+	}
+}
+
+func sendLeaderboardKeyboard(chatID int64) {
 	categories := data.GetCategories()
 
 	//local variables in the func to prevent multiplying buttons
