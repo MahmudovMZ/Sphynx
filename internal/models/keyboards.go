@@ -5,9 +5,14 @@ type Bot_Menu struct {
 	Title string
 }
 
-var Menu = []Bot_Menu{
+var BotMenu = []Bot_Menu{
 	{Id: 1, Title: "Registration"},
 	{Id: 2, Title: "Login"},
-	{Id: 3, Title: "Leader Board"},
-	{Id: 4, Title: "Quit"},
+}
+
+var GameMenu = []Bot_Menu{
+	{Id: 1, Title: "New Game"},
+	{Id: 2, Title: "Leader Board"},
+	{Id: 3, Title: "Quit"},
+	{Id: 3, Title: "Exit"},
 }

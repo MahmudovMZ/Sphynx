@@ -27,18 +27,49 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 	chatID := update.Message.Chat.ID
 	text := update.Message.Text
 
-	if text == "/quit" { //Quit the ssession and delete all data
-		botState[chatID] = ""
-		userState[chatID] = ""
-		delete(userData, chatID)
-		delete(gameData, chatID)
+	//Current bot state
+	stage := botState[chatID]
 
-		send(chatID, "Your current session has been ended. Send /start to begin again.")
+	//login
+	isLoggedIn := stage != ""
+
+	if text == "Quit" || text == "/quit" {
+
+		if !isLoggedIn {
+			send(chatID, "You are not in the system yet.")
+			return
+		}
+
+		if !isInGame(stage) {
+			send(chatID, "There is no active challenge to leave.")
+			return
+		}
+
+		// выход из игры
+		delete(gameData, chatID)
+		botState[chatID] = models.STATE_USER_LOGED_IN
+
+		sendGameKeyBoard(chatID)
+		send(chatID, "You leave the current challenge. Choose your next step.")
 		return
 	}
 
-	//Current bot state
-	stage := botState[chatID]
+	if text == "Exit" || text == "/exit" {
+
+		if !isLoggedIn {
+			send(chatID, "You are not in the system yet. Use /start.")
+			return
+		}
+
+		delete(gameData, chatID)
+		delete(userData, chatID)
+
+		botState[chatID] = ""
+		userState[chatID] = ""
+
+		send(chatID, "You have left your journey. Use /start to begin again.")
+		return
+	}
 
 	switch stage {
 
@@ -47,8 +78,6 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		if text == "/start" {
 			//Sending keyboard for choosing a option
 			sendMenuKeyBoard(chatID)
-			//Changing to the next state
-			userState[chatID] = models.STATE_WAITING_CHOICE
 		}
 		switch text {
 		case "Registration":
@@ -67,17 +96,6 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 			send(chatID, "Speak your name:")
 			botState[chatID] = models.STATE_STARTING_LOGIN
 			userState[chatID] = models.STATE_WAITING_LOGIN_NAME
-		case "Leader Board":
-			send(chatID, "leader board")
-
-		case "Quit":
-			botState[chatID] = ""
-			userState[chatID] = ""
-			delete(userData, chatID)
-			delete(gameData, chatID)
-
-			send(chatID, "Your current session has been ended. Send /start to begin again.")
-			return
 		}
 
 	//Starting registration scenario
@@ -136,12 +154,26 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 			} else {
 				user := matchedUsers[0]
 				send(chatID, fmt.Sprintf("The gate opens. You have returned successfully, %s!", user.Username))
-				sendCategoryKeyboard(chatID)
-				botState[chatID] = models.STATE_WAITING_CATEGORY
-				userState[chatID] = ""
-				delete(userData, chatID)
+				botState[chatID] = models.STATE_USER_LOGED_IN
+				sendGameKeyBoard(chatID)
 			}
 		}
+	//choice of action game menu
+	case models.STATE_USER_LOGED_IN:
+		// //Changing to the next state
+		// userState[chatID] = models.STATE_WAITING_CHOICE
+		choice := text
+
+		switch choice {
+		case "New Game":
+			send(chatID, "New Game")
+			botState[chatID] = models.STATE_WAITING_CATEGORY
+			sendCategoryKeyboard(chatID)
+			fmt.Println(choice)
+		case "Leader Board":
+			send(chatID, "leader Board")
+		}
+
 	//User choosing a category
 	case models.STATE_WAITING_CATEGORY:
 		categories := data.GetCategories()
@@ -184,10 +216,19 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		}
 		if game.IsGameOver() {
 			send(chatID, fmt.Sprintf("Your adventure ends here! Final score: %d. Attempts: %d.", game.Score, game.Lives))
-			delete(gameData, chatID)
-			botState[chatID] = ""
+			botState[chatID] = models.STATE_USER_LOGED_IN
+			attemts := game.Lives
+			switch attemts {
+			case 0:
+				send(chatID, "The challenge has bested you... for now.")
+				send(chatID, "Try again or you can witness the ones who conquered the challenge")
+				sendGameKeyBoard(chatID)
+				return
+			default:
+				send(chatID, "You have conquered the challenge. Choose your next move to continue")
+				return
+			}
 
-			return
 		}
 		//Endless cycle till quizes are end
 		send(chatID, game.GetCurrentHint())
@@ -206,7 +247,36 @@ func send(chatID int64, message string) {
 }
 
 func sendMenuKeyBoard(chatID int64) {
-	menu := models.Menu
+	menu := models.BotMenu
+
+	//local variables in the func to prevent multiplying buttons
+	rows := make([][]tgbotapi.KeyboardButton, 0)
+	row := make([]tgbotapi.KeyboardButton, 0)
+
+	for i, m := range menu {
+		row = append(row, tgbotapi.NewKeyboardButton(m.Title))
+		if (i+1)%2 == 0 {
+			//adding row copy into the rows
+			rows = append(rows, append([]tgbotapi.KeyboardButton{}, row...))
+			row = []tgbotapi.KeyboardButton{}
+		}
+	}
+
+	if len(row) > 0 {
+		rows = append(rows, append([]tgbotapi.KeyboardButton{}, row...))
+	}
+
+	keyboard := tgbotapi.NewReplyKeyboard(rows...)
+	msg := tgbotapi.NewMessage(chatID, "Behold... Have we met before or do you stand before me for the first time")
+	msg.ReplyMarkup = keyboard
+
+	if _, err := bot.Send(msg); err != nil {
+		log.Println("Could not send category keyboard:", err)
+	}
+}
+
+func sendGameKeyBoard(chatID int64) {
+	menu := models.GameMenu
 
 	//local variables in the func to prevent multiplying buttons
 	rows := make([][]tgbotapi.KeyboardButton, 0)
@@ -230,7 +300,7 @@ func sendMenuKeyBoard(chatID int64) {
 	msg.ReplyMarkup = keyboard
 
 	if _, err := bot.Send(msg); err != nil {
-		log.Println("Could not send category keyboard:", err)
+		log.Println("Could not send game keyboard:", err)
 	}
 }
 
@@ -298,4 +368,8 @@ func Login(userN, userP string) ([]models.User, error) {
 	}
 
 	return matched, nil
+}
+
+func isInGame(state string) bool {
+	return state == models.STATE_WAITING_GAME
 }
