@@ -16,7 +16,7 @@ func GetWords(catId int) []models.Word {
 	}
 
 	rows, err := database.Query(
-		"SELECT index, hint, answer, category, catid FROM wordsToGuess WHERE catid = $1",
+		"SELECT index, hint, answer, category, catid FROM wordsToGuess WHERE catid = $1 ORDER BY RANDOM() LIMIT 10",
 		catId,
 	)
 	if err != nil {

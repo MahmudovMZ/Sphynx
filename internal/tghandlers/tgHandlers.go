@@ -128,10 +128,21 @@ func BotHandler(bot2 *tgbotapi.BotAPI, update tgbotapi.Update) {
 		switch userStage {
 		case models.STATE_WAITING_LOGIN_NAME:
 			userData[chatID]["name"] = text
-			send(chatID, fmt.Sprintf(
-				"Ah, %s... I see you. Now whisper the secret that guards your way.",
-				userData[chatID]["name"],
-			))
+			found, err := data.GetByUsersName(text)
+			log.Println(found)
+			if err != nil {
+				send(chatID, fmt.Sprintf("Something went wrong: %v", err))
+				return
+			}
+			if found == nil {
+				send(chatID, "We have not met yet. I do not know you")
+				send(chatID, "You need to choose another gate to reveal what defines you")
+				delete(userData, chatID)
+				userState[chatID] = ""
+				botState[chatID] = ""
+				return
+			}
+			send(chatID, fmt.Sprintf("Ah, %s... I see you. Now whisper the secret that guards your way.", userData[chatID]["name"]))
 			userState[chatID] = models.STATE_WAITING_LOGIN_PASS
 
 		case models.STATE_WAITING_LOGIN_PASS:

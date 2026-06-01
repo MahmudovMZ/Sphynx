@@ -12,14 +12,7 @@ func LeaderBoardFill(user_id, category_id, score int) error { //Saving all data 
 
 func ShowLeaderBoardByCategory(catId int) ([]models.LeaderBoard, error) {
 	rows, err := db.GetDB().Query(`
-	SELECT u.id, u.username, SUM(r.score) AS total_score
-	FROM game_results r
-	JOIN users u ON u.id = r.user_id
-	WHERE r.category_id = $1
-	GROUP BY u.id, u.username
-	ORDER BY total_score DESC
-	LIMIT 10
-`, catId)
+	SELECT u.id, u.username, SUM(r.score) AS total_score FROM game_results r JOIN users u ON u.id = r.user_id WHERE r.category_id = $1 GROUP BY u.id, u.username ORDER BY total_score DESC LIMIT 10`, catId)
 	if err != nil {
 		return nil, err
 	}
