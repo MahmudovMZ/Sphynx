@@ -19,14 +19,16 @@ type Game struct {
 	Lives        int
 	Words        []models.Word
 	CurrentIndex int
+	CategoryID   int
 }
 
 // Новая игра
-func NewGame(CategroyId int) *Game {
+func NewGame(categroyId int) *Game {
 	game := Game{
-		Score: 0,
-		Lives: 5,
-		Words: data.GetWords(CategroyId),
+		Score:      0,
+		Lives:      5,
+		Words:      data.GetWords(categroyId),
+		CategoryID: categroyId,
 	}
 	return &game
 }
@@ -48,19 +50,20 @@ func (g *Game) CheckAnswer(userAnswer string) bool {
 	}
 
 	if strings.TrimSpace(strings.ToLower(userAnswer)) == strings.ToLower(correctAnswer) {
-		g.Score++
+		g.Score += 10
 
 		return true
 	} else {
 		g.Lives--
+		g.Score -= 2
 		g.CurrentIndex++
 		return false
 	}
 }
 
-// Проверка попыток и оставшихся слов
+// checking the remaining attempts, score and words to guess
 func (g *Game) IsGameOver() bool {
-	return g.Lives <= 0 || g.CurrentIndex >= len(g.Words)
+	return g.Lives == 0 || g.CurrentIndex >= len(g.Words)
 }
 
 // Запуск всей программы

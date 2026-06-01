@@ -9,6 +9,12 @@ type Word struct {
 }
 
 type Category struct {
-	ID   int    `json:"category_id"`
-	Name string `json:"category_name"`
+	ID   int
+	Name string
+}
+
+type LeaderBoard struct {
+	UserId   int
+	UserName string
+	Score    int
 }

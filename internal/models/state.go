@@ -1,10 +1,10 @@
 package models
 
 const (
-	STATE_WAITING_CHOICE       = "waining_choice"
 	STATE_WAITING_CATEGORY     = "waiting_category"
 	STATE_WAITING_GAME         = "waiting_game"
 	STATE_WAITING_LEADER_BOARD = "waiting_leader_board"
+	STATE_USER_LOGED_IN        = "user_loged_in"
 )
 
 const (
